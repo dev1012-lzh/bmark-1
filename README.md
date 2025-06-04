@@ -3,6 +3,7 @@ A benchmark for browsers. Simple, fully HTML and javascript. Javascript environm
 
 ## Phases
 Phase 1 : [CLICK HERE](https://dev1012-lzh.github.io/bmark-1/index.html)
+
 Phase 2 : ONCOMING!
 
 ## Screenshots

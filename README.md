@@ -1,5 +1,5 @@
 # bmark-1
-A benchmark for browsers. Use javascript Babylon.js to render a huge number of cubes. 
+A benchmark for browsers. Simple, fully HTML and javascript. Javascript environment (Babylon.js) used to render a huge number of cubes. 
 ## Features
 1. View FPS and blocks created
 2. Emergency stop when lag

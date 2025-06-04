@@ -1,5 +1,5 @@
 # bmark-1
-A benchmark for browsers. Simple, fully HTML and javascript. Javascript environment (Babylon.js) used to render a huge number of cubes. 
+A benchmark for browsers. Simple, fully HTML and javascript. Javascript environment (Babylon.js) used to render a huge number of cubes. View FPS and details instantly.
 
 ## Phases
 Phase 1 : [CLICK HERE](https://dev1012-lzh.github.io/bmark-1/index.html)

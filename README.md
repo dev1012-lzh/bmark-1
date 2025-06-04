@@ -12,5 +12,5 @@ Phase 2 : ONCOMING!
 1. Open a issue [here](https://github.com/dev1012-lzh/bmark-1/issues)
 2. Pull a request [here](https://github.com/dev1012-lzh/bmark-1/pulls)
 
-Good luck!
+
 

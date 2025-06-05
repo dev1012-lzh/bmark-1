@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>GPU Render Test</title>
+    <style>
+        #renderCanvas {
+            width: 100%;
+            height: 100vh;
+            touch-action: none;
+
+        }
+
+        * {
+            font-family: poppins, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .front {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #00000067;
+
+
+        }
+
+        .title {
+            font-size: 2em;
+            color: white;
+            text-align: center;
+        }
+
+        p {
+            color: white;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: rgb(0, 0, 0);
+            background-color: #ffffff;
+            border: black 2px solid;
+            outline: white 2px solid;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            margin-left: 50%;
+            transform: translateX(-50%);
+            
+            transition: .2s all ease-out;
+        }
+
+        button:hover {
+            background-color: #f0f0f0;
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        button:disabled {
+            background-color: #ff9f9f;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="front">
+        <div class="para1">
+            <div>
+                <div class="title">CPU/GPU Render Test</div>
+                <p>This is a test page to check CPU/GPU rendering capabilities.</p>
+                <p>It will render a large number of boxes in a javascript render environment.</p>
+                <p>Boxes are increased each second. </p>
+                <p><strong style="color: red;">In case of lag:</strong> press <b
+                        style="color: rgb(255, 255, 255);">any</b> key will do.</p>
+
+
+                <button disabled>Recording your FPS...</button>
+                <script>
+                    document.querySelector("button").addEventListener('click', () => {
+                        window.location.href = "main.html";
+                    });
+                    setTimeout(() => {
+                        document.querySelector("button").textContent = "Start!";
+                        document.querySelector("button").disabled = false;
+                    }, 2000);
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="renderCanvas"></canvas>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script>
+        let numBoxes = 300; // Initial number of boxes
+        let boxCreationInterval;
+
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+
+        const createScene = function () {
+            const scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color3(0, 0, 0);
+
+            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2, 5, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+            const autoRotate = new BABYLON.AutoRotationBehavior();
+            autoRotate.idleRotationSpeed = 0.5;
+            camera.addBehavior(autoRotate);
+            camera.radius = 10;
+            camera.detachControl(canvas);
+
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+            light.intensity = 0.7;
+
+
+
+            // Initial box creation
+            for (let i = 0; i < numBoxes; i++) {
+                const box = BABYLON.MeshBuilder.CreateBox("box" + i, { size: 0.2 }, scene);
+                box.position.x = Math.random() * 10 - 5;
+                box.position.y = Math.random() * 10 - 5;
+                box.position.z = Math.random() * 10 - 5;
+                box.rotation.x = Math.random() * Math.PI;
+                box.rotation.y = Math.random() * Math.PI;
+                box.rotation.z = Math.random() * Math.PI;
+                const material = new BABYLON.StandardMaterial("boxMaterial" + (numBoxes + i), scene);
+                material.diffuseColor = new BABYLON.Color3(Math.random(), Math.random(), Math.random());
+                box.material = material;
+            }
+
+            
+
+
+            return scene;
+        };
+
+        const scene = createScene();
+
+        engine.runRenderLoop(function () {
+            scene.render();
+            const fps = engine.getFps();
+            if (!window.startTime) window.startTime = Date.now();
+            if (typeof window.hasChecked === 'undefined') window.hasChecked = false;
+            let currentTime = Date.now();
+
+            if (!window.hasChecked && currentTime - window.startTime >= 2000) {
+                window.hasChecked = true;
+                if (fps < 10) {
+                    
+                    alert(`Your device is not compatible with this benchmark. FPS is too low.  \n Current FPS: ${Math.ceil(fps)} \n Error Code: 1001_FPS_TOO_LOW`);
+                    window.location.href = "index.html";
+                }
+            }
+
+        });
+
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+
+    </script>
+</body>
+
+</html>

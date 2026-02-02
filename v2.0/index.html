@@ -1,124 +1,129 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
+    <title>GPU Torture V2.0</title>
     <meta charset="UTF-8">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #020202; color: #ff3e3e; font-family: 'Courier New', Courier, monospace; }
-        #renderCanvas { width: 100%; height: 100%; touch-action: none; filter: contrast(1.1); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050000; color: #ff3e3e; font-family: 'Courier New', Courier, monospace; }
+        #renderCanvas { width: 100%; height: 100%; touch-action: none; }
         #ui {
             position: absolute; top: 20px; left: 20px; z-index: 10;
-            background: rgba(20, 0, 0, 0.8); padding: 25px; 
-            border: 2px solid #ff3e3e; border-radius: 0px;
-            box-shadow: 0 0 15px rgba(255, 62, 62, 0.4);
+            background: rgba(15, 0, 0, 0.9); padding: 20px; 
+            border: 2px solid #ff3e3e; box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
         }
-        .stat-value { font-size: 2.2rem; font-weight: 900; display: block; text-shadow: 2px 2px #550000; }
-        .warning { color: yellow; font-size: 0.7rem; margin-top: 10px; display: block; }
+        .stat { font-size: 1.8rem; font-weight: 900; display: block; margin-bottom: 5px; }
+        .hint { color: #888; font-size: 0.7rem; text-transform: uppercase; }
+        #abortMsg { 
+            display: none; position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); z-index: 100;
+            background: red; color: white; padding: 40px; text-align: center;
+            font-weight: bold; border: 5px solid white;
+        }
     </style>
 </head>
 <body>
+    <div id="abortMsg"><h1>TEST ABORTED</h1><p>Critical Performance Drop Detected</p><button onclick="location.reload()">RETRY</button></div>
+    
     <div id="ui">
-        <span style="letter-spacing: 5px;">STRESS_TEST_v2</span>
-        <hr border="1" color="#ff3e3e">
-        <span id="fpsValue" class="stat-value">00</span> <span style="font-size: 0.8rem">FPS</span>
-        <span id="vtxCount" class="stat-value">0</span> <span style="font-size: 0.8rem">ACTIVE VERTICES</span>
+        <span class="hint">System Status</span>
+        <span id="fpsValue" class="stat">00 FPS</span>
+        <span class="hint">Geometry Load</span>
+        <span id="vtxCount" class="stat">0 VTX</span>
+        <hr color="#440000">
+        <span class="hint">Press SPACE to Emergency Stop</span>
     </div>
-    <canvas id="renderCanvas"></canvas>
 
+    <canvas id="renderCanvas"></canvas>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
+
     <script>
         const canvas = document.getElementById("renderCanvas");
-        // Force WebGL2 for maximum feature support
-        const engine = new BABYLON.Engine(canvas, true, { 
-            antialias: true, 
-            stencil: true, 
-            preserveDrawingBuffer: false,
-            powerPreference: "high-performance" 
-        });
-
-        let totalVertices = 0;
+        const engine = new BABYLON.Engine(canvas, true, { antialias: true, powerPreference: "high-performance" });
+        
         let objectCount = 0;
+        let totalVertices = 0;
+        let isAborted = false;
+        let lagFrames = 0;
 
         const createScene = function () {
             const scene = new BABYLON.Scene(engine);
             scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
-            // 1. ArcRotate Camera with heavy FOV to force more objects into view
-            const camera = new BABYLON.ArcRotateCamera("cam", 0, 0, 40, BABYLON.Vector3.Zero(), scene);
+            const camera = new BABYLON.ArcRotateCamera("cam", 0, 0, 50, BABYLON.Vector3.Zero(), scene);
             camera.attachControl(canvas, true);
             camera.useAutoRotationBehavior = true;
 
-            // 2. Heavy Lighting & Shadows
-            const light = new BABYLON.SpotLight("spot", new BABYLON.Vector3(0, 30, 0), new BABYLON.Vector3(0, -1, 0), Math.PI / 2, 30, scene);
-            light.intensity = 5000;
-            
-            const shadowGenerator = new BABYLON.ShadowGenerator(4096, light); // Extreme shadow map
-            shadowGenerator.useContactHardeningShadow = true; // PCSS is very GPU heavy
-            shadowGenerator.contactHardeningLightSizeUvr = 0.1;
+            const light = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-1, -2, -1), scene);
+            light.intensity = 3;
 
-            // 3. Post-Process Stack (The GPU Killer)
-            const pipeline = new BABYLON.DefaultRenderingPipeline("pipeline", true, scene, [camera]);
-            pipeline.samples = 8; // 8x MSAA
+            // GPU KILLER 1: 4K Shadow Maps with PCSS
+            const shadowGenerator = new BABYLON.ShadowGenerator(4096, light);
+            shadowGenerator.useContactHardeningShadow = true;
+
+            // GPU KILLER 2: SSAO + Bloom + High Samples
+            const pipeline = new BABYLON.DefaultRenderingPipeline("pipe", true, scene, [camera]);
+            pipeline.samples = 8;
             pipeline.bloomEnabled = true;
-            pipeline.bloomThreshold = 0.5;
-            pipeline.chromaticAberrationEnabled = true;
-            pipeline.chromaticAberration.aberrationAmount = 35;
-            
-            // 4. SSAO (Screen Space Ambient Occlusion) - Massive performance hit
-            const ssao = new BABYLON.SSAO2RenderingPipeline("ssao", scene, 0.75, [camera]);
-            ssao.radius = 2;
-            ssao.totalStrength = 1.5;
 
-            // 5. The "Tougher" Mesh: Torus Knot
-            const spawnHighPoly = () => {
-                // Each Torus Knot here has ~2,500 vertices (Radial 64, Tubular 16)
-                const knot = BABYLON.MeshBuilder.CreateTorusKnot("knot", {
-                    radius: 1,
-                    tube: 0.3,
-                    radialSegments: 64, 
-                    tubularSegments: 24,
-                    p: 2,
-                    q: 3
+            // MATERIAL: Refractive Glass (Expensive for shaders)
+            const glass = new BABYLON.PBRMaterial("glass", scene);
+            glass.metallic = 0.5;
+            glass.roughness = 0.1;
+            glass.indexOfRefraction = 1.5;
+            glass.alpha = 0.5;
+            glass.directIntensity = 1.0;
+
+            const spawnKnot = () => {
+                if(isAborted) return;
+
+                // High vertex density: 128 radial segments
+                const knot = BABYLON.MeshBuilder.CreateTorusKnot("k", {
+                    radius: 2, tube: 0.6, radialSegments: 128, tubularSegments: 32
                 }, scene);
 
-                knot.position = new BABYLON.Vector3(
-                    (Math.random() - 0.5) * 40,
-                    (Math.random() - 0.5) * 40,
-                    (Math.random() - 0.5) * 40
-                );
-
-                const pbr = new BABYLON.PBRMaterial("mat", scene);
-                pbr.metallic = 1.0;
-                pbr.roughness = Math.random() * 0.5;
-                pbr.albedoColor = new BABYLON.Color3(1, 0.2, 0.2);
-                knot.material = pbr;
-
+                knot.position = new BABYLON.Vector3((Math.random()-0.5)*60, (Math.random()-0.5)*60, (Math.random()-0.5)*60);
+                knot.material = glass;
                 shadowGenerator.addShadowCaster(knot);
                 
                 objectCount++;
                 totalVertices += knot.getTotalVertices();
             };
 
-            // Initial load
-            for(let i=0; i<100; i++) spawnHighPoly();
-            
-            // Rapid spawn every 20ms
-            setInterval(spawnHighPoly, 20);
-
-            return scene;
+            const spawnInterval = setInterval(spawnKnot, 30);
+            return { scene, spawnInterval };
         };
 
-        const scene = createScene();
+        const { scene, spawnInterval } = createScene();
+
+        // Safety Logic: Abort function
+        const abortTest = (reason) => {
+            isAborted = true;
+            clearInterval(spawnInterval);
+            engine.stopRenderLoop();
+            scene.dispose();
+            document.getElementById("abortMsg").style.display = "block";
+            console.warn("Benchmark Aborted: " + reason);
+        };
 
         engine.runRenderLoop(() => {
+            if (isAborted) return;
+
             scene.render();
-            document.getElementById("fpsValue").innerText = Math.round(engine.getFps());
-            document.getElementById("vtxCount").innerText = totalVertices.toLocaleString();
-            
-            // Randomly rotate all meshes to force transform updates every frame
-            scene.meshes.forEach(m => {
-                m.rotation.y += 0.02;
-                m.rotation.x += 0.01;
-            });
+            const fps = engine.getFps();
+            document.getElementById("fpsValue").innerText = Math.round(fps) + " FPS";
+            document.getElementById("vtxCount").innerText = totalVertices.toLocaleString() + " VTX";
+
+            // WATCHDOG: If FPS < 10 for ~180 frames (approx 3 seconds at 60fps or instant at low fps)
+            if (fps < 10 && objectCount > 10) {
+                lagFrames++;
+                if (lagFrames > 180) abortTest("Low Frame Rate Safety Triggered");
+            } else {
+                lagFrames = 0;
+            }
+        });
+
+        // Manual Abort
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space" || e.key === "Escape") abortTest("Manual User Intervention");
         });
 
         window.addEventListener("resize", () => engine.resize());

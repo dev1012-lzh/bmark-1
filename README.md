@@ -4,9 +4,10 @@ A benchmark for browsers. Simple, fully HTML and javascript. Javascript environm
 ## Versions to Try! 
 V1.0 : [CLICK HERE](https://dev1012-lzh.github.io/bmark-1/v1.0/index.html)
 V1.6 : [CLICK HERE](https://dev1012-lzh.github.io/bmark-1/index.html)
+V2.0 : [HERE](https://dev1012-lzh.github.io/bmark-1/v2.0/)
 View version logs [here](./vlogs.md)
 
-Phase 2 : ONCOMING!
+
 
 ## Screenshots
 ![image](https://github.com/user-attachments/assets/1be826af-179d-448c-a8e3-a35ceb9f1374)

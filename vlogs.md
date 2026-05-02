@@ -13,6 +13,7 @@ We've got some versions right now. View them.
 
 ## V2.0
 [here](https://dev1012-lzh.github.io/bmark-1/v2.0/index.html)
+### Improvements made:
 1. Geometry: Switched to Torus Knots (High-poly complex curves).
 2. Advanced Shaders: Implemented Refractive Glass PBR. GPU now calculates light bending and transparency sorting.
 3. Lighting: Upgraded to PCSS (Contact Hardening Shadows) with 4K maps. Shadows now blur dynamically based on distance.
